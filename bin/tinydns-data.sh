@@ -1,8 +1,9 @@
 #!/bin/bash
+here="$( cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd )"
 set -e
 #set -x
-data_dir=${DYNDNS_DATA:-/etc/djbdns/tinydns-internal/root}
-archive_dir=${DYNDNS_ARCHIVE:-/etc/djbdns/tinydns-internal/root/archive}
+data_dir=${DYNDNS_DATA:-$here/../data}
+archive_dir=${DYNDNS_ARCHIVE:-$data_dir/archive}
 dyn_dir="${data_dir}/DYNDNS"
 static_dir="${data_dir}/DATA"
 tmpfile=$(mktemp /tmp/DYNDNS-XXXXXX)
@@ -14,4 +15,4 @@ if [ -f data ];then
   cp data "$archive_dir/$(basename $tmpfile)"
 fi
 awk -F: '/^=/{if(datas[$1]==""){datas[$1]=$0;print}}/^[^=]/{print}' $tmpfile > data
-/usr/bin/tinydns-data
+tinydns-data

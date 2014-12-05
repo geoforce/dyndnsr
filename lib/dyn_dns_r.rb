@@ -89,6 +89,13 @@ module DynDnsR
         other
       end
     end
+
+    def make_data
+      R 'db/models'
+      A.each { |a| a.write! true }
+      Equal.each { |e| e.write! true }
+      Run((ROOT / 'bin/tinydns-data.sh').to_s)
+    end
   end
 end
 Dir[DynDnsR::LIBROOT.join('core_ext', '*.rb').to_s].each { |f| require f }
