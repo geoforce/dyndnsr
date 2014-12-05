@@ -1,14 +1,32 @@
 require 'roda'
 require 'api-auth'
 require_relative '../db/models'
+require 'json'
 # The Main Namespace
 module DynDnsR
-  L 'a'
-  L 'alias'
+  Api = Class.new(Roda)
   # Our Web App
-  class Api < Roda
+  class Api
     plugin :halt
     use Rack::Session::Cookie, secret: ENV['SECRET_KEY'] || ApiAuth.generate_secret_key # rubocop:disable Metrics/LineLength
+    SUPPORTED_ACTIONS = %w(hostname alias)
+
+    # for the main api actions of hostname and alias
+    # TODO: add cname support
+    def obj_from_action(action)
+      return false unless SUPPORTED_ACTIONS.include? action
+      case action
+      when 'hostname'
+        DynDnsR::Equal
+      when 'alias'
+        DynDnsR::A
+      else
+        DynDnsR.log.warn("Unimplemented method #{action}")
+        false
+      end
+    end
+
+    # All the action is here
     route do |r|
       r.root do
         r.redirect '/api'
@@ -30,20 +48,21 @@ module DynDnsR
           "You are authenticated #{@auth_user.name}"
         end
 
-        r.on ':verb/:host/:ip/:ttl' do |verb, host, ip, ttl|
-          r.halt 406, 'Unsupported action' unless %w(a alias).include? verb
-          obj = case verb
-                when 'a'
-                  DynDnsR::A
-                when 'alias'
-                  DynDnsR::Alias
-                end
+        r.on 'host/:host' do |host|
+          r.get do
+            Equal.find(host: host).values.to_json
+          end
+        end
+
+        r.on ':action/:host/:ip/:ttl' do |action, host, ip, ttl|
+          obj = obj_from_action action
+          r.halt 406, 'Unsupported action' unless obj
           r.post do
-            success = obj.create host, ip, ttl
+            success = obj.create_record @auth_user.id, host, ip, ttl
             if success
               'Success'
             else
-              r.halt 406, "Unable to create #{verb} record"
+              r.halt 406, "Unable to create #{action} record"
             end
           end
         end

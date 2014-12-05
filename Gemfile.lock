@@ -9,6 +9,7 @@ GEM
     coderay (1.1.0)
     innate (2013.02.21)
       rack (~> 1.5.2)
+    json (1.8.1)
     method_source (0.8.2)
     mime-types (2.4.3)
     netrc (0.9.0)
@@ -37,6 +38,8 @@ GEM
       ruby-progressbar (~> 1.4)
     ruby-progressbar (1.7.0)
     sequel (4.17.0)
+    sequel_postgresql_triggers (1.0.7)
+      sequel
     slop (3.6.0)
 
 PLATFORMS
@@ -46,10 +49,13 @@ DEPENDENCIES
   api-auth
   bacon
   innate
+  json
   pg
   pry
+  rack
   rake
   rest-client
   roda
   rubocop
   sequel
+  sequel_postgresql_triggers

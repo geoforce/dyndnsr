@@ -7,11 +7,14 @@ namespace :db do
 
   desc 'Print current schema version'
   task version: :connect do
-    begin
-      version = format('%s - %s', DynDnsR.db[:schema_migrations]
-        .order(Sequel.desc(:filename)).first[:filename].sub(/\.rb$/, '')
-        .split('_', 2))
-    rescue
+    version = begin
+      v = DynDnsR.db[:schema_migrations]
+        .order(Sequel.desc(:filename))
+        .first[:filename].sub(/\.rb$/, '')
+        .split('_', 2)
+      format('%s - %s', *v)
+    rescue => e
+      $stderr.puts e
       0
     end
     puts "Schema Version: #{version}"

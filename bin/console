@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+require 'pry'
+require_relative './optioner'
+require_relative '../app'
+DynDnsR.log.info "Environment is #{DynDnsR.env}"
+
+DynDnsR.pry

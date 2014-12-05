@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+require_relative '../lib/v2'
+conn = V2.options.db
+puts conn
+conn, options = conn.split('?', 2)
+ENV['PGOPTIONS'] = options.split('&').map { |o| "-c#{o}" }.join(' ') if options
+Kernel.exec 'psql', conn

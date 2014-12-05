@@ -1,5 +1,5 @@
-require "pathname"
-require "logger"
+require 'pathname'
+require 'logger'
 
 # Allows for pathnames to be easily added to
 class Pathname
@@ -12,63 +12,89 @@ end
 # This sets all the globals and creates our main namespace
 module DynDnsR
   LIBROOT = Pathname(__FILE__).dirname.expand_path
-  ROOT = LIBROOT/".."
-  MIGRATION_ROOT = ROOT/:migrations
-  TOPLEVEL = ROOT/:DYNDNS
-  MODEL_ROOT = ROOT/:model
-  SPEC_HELPER_PATH = ROOT/:spec
-  autoload :VERSION, (LIBROOT/"dyn_dns_r/version").to_s
-  # Helper method to load models
-  # @model String The model you wish to load
-  def self.M(model)
-    require DynDnsR::MODEL_ROOT.join(model).to_s
-  end
+  ROOT = LIBROOT / '..'
+  MIGRATION_ROOT = ROOT / 'db/migrate'
+  TOPLEVEL = ROOT / :DYNDNS
+  MODEL_ROOT = ROOT / :model
+  SPEC_HELPER_PATH = ROOT / :spec
+  autoload :VERSION, (LIBROOT / 'dyn_dns_r/version').to_s
 
-  # Helper method to load files from ROOT
-  # @file String The file you wish to load
-  def self.R(file)
-    require DynDnsR::ROOT.join(file).to_s
-  end
-
-  # Helper method to load files from lib/yrb
-  # @file String The file you wish to load
-  def self.L(file)
-    require (DynDnsR::LIBROOT/:dyn_dns_r).join(file).to_s
-  end
-
-  def self.Run(*args)
-    require "open3"
-    Open3.popen3(*args) do |sin, sout, serr|
-      o = Thread.new do
-        sout.each_line { |l| puts l.chomp }
-      end
-      e = Thread.new do
-        serr.each_line { |l| $stderr.puts l.chomp }
-      end
-      sin.close
-      o.join
-      e.join
+  class << self
+    # rubocop:disable Style/MethodName
+    # We want some UPCASE methods here
+    #
+    # Helper method to load models
+    # @model String The model you wish to load
+    def M(model)
+      require MODEL_ROOT.join(model).to_s
     end
-  end
 
-  def self.log_location(other)
-    if other.is_a?(String)
-      # We got a pathname
-      case other
-      when /STDOUT/i # Special case for STDOUT
-        STDOUT
-      when %r{^/} # If we have a leading slash, return it as given
+    # Helper method to load files from ROOT
+    # @file String The file you wish to load
+    def R(file)
+      require ROOT.join(file).to_s
+    end
+
+    # Helper method to load files from lib/dyn_dns_r/
+    # @file String The file you wish to load
+    def L(file)
+      require((LIBROOT / :dyn_dns_r).join(file).to_s)
+    end
+
+    # Attempt to change options
+    def reoption
+      options[:db] = nil
+      options[:db_log] = nil
+      options[:env] = nil
+      load((ROOT / 'options.rb').to_s)
+    end
+
+    def env
+      options.env
+    end
+
+    def env=(other)
+      ENV['DynDnsR_ENV'] = other
+      reoption
+    end
+
+    def Run(*args) # rubocop:disable Metrics/MethodLength
+      require 'open3'
+      Open3.popen3(*args) do |sin, sout, serr|
+        o = Thread.new do
+          sout.each_line { |l| puts l.chomp }
+        end
+        e = Thread.new do
+          serr.each_line { |l| $stderr.puts l.chomp }
+        end
+        sin.close
+        o.join
+        e.join
+      end
+    end
+    # rubocop:enable Style/MethodName
+    # resume caring about method names
+
+    def log_location(other) # rubocop:disable Metrics/MethodLength
+      if other.is_a?(String)
+        case other
+        when /STDOUT/i # Special case for STDOUT
+          STDOUT
+        when /^\// # If we have a leading slash, return it as given
+          other
+        else # Otherwise prepend ROOT
+          ROOT.join(other).to_s
+        end
+      else # We didn't get a string, assuming an IO/Stream object
         other
-      else # Otherwise prepend ROOT
-        ROOT.join(other).to_s
       end
-    else # We didn't get a string, assuming an IO object or something that can accept text streams
-      other
     end
   end
-
 end
-DynDnsR::R "options"
-DynDnsR::Log = Logger.new(DynDnsR.options.logfile, 10, 10240000) unless DynDnsR.const_defined?("Log")
+Dir[DynDnsR::LIBROOT.join('core_ext', '*.rb').to_s].each { |f| require f }
+DynDnsR::R 'options'
+opt = DynDnsR.options
+DynDnsR::Log = Logger.new(opt.logfile,
+                          opt.max_log_files,
+                          opt.max_log_size) unless DynDnsR.const_defined?('Log')
 DynDnsR::Log.level = DynDnsR.options.log_level
-

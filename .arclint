@@ -1,0 +1,8 @@
+{
+  "linters": {
+    "custom_ruby": {
+      "type": "script-and-regex",
+      "include": "{\\.(e?rb|task|rake)}"
+    }
+  }
+}

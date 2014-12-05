@@ -1,0 +1,11 @@
+{
+  "project.name" : "infrastructure",
+  "phabricator.uri": "https://codereview.geoforce.net",
+  "linter.scriptandregex.script": "bin/lint.sh -- ",
+  "linter.scriptandregex.regex": "{^[^:]*:(?P<line>\\d+):(?P<char>\\d+): (?:(?P<error>[EF])|(?P<warning>W)|(?P<advice>C)): (?P<code>[^:]*): (?P<name>.*?)\n(?P<message>.*\n\\s*\\^+)}m",
+  "load": [
+      ".arcanist-extensions/tap_test_engine"
+  ],
+  "unit.engine": "TAPTestEngine",
+  "unit.engine.tap.command": "rake tap"
+}
