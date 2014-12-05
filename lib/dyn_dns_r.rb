@@ -14,7 +14,7 @@ module DynDnsR
   LIBROOT = Pathname(__FILE__).dirname.expand_path
   ROOT = LIBROOT / '..'
   MIGRATION_ROOT = ROOT / 'db/migrate'
-  TOPLEVEL = ROOT / :DYNDNS
+  TOPLEVEL = ROOT / 'data/DYNDNS'
   MODEL_ROOT = ROOT / :model
   SPEC_HELPER_PATH = ROOT / :spec
   autoload :VERSION, (LIBROOT / 'dyn_dns_r/version').to_s
@@ -91,6 +91,8 @@ module DynDnsR
     end
 
     def make_data
+      require 'fileutils'
+      FileUtils.rm_rf TOPLEVEL
       R 'db/models'
       A.each { |a| a.write! true }
       Equal.each { |e| e.write! true }

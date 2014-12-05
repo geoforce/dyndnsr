@@ -9,21 +9,19 @@ module DynDnsR
   class Api
     plugin :halt
     use Rack::Session::Cookie, secret: ENV['SECRET_KEY'] || ApiAuth.generate_secret_key # rubocop:disable Metrics/LineLength
-    SUPPORTED_ACTIONS = %w(hostname alias)
+    SUPPORTED_ACTIONS = { hostname: DynDnsR::Equal,
+                          alias: DynDnsR::A }
 
     # for the main api actions of hostname and alias
-    # TODO: add cname support
+    # TODO: add cname support to SUPPORTED_ACTIONS
     def obj_from_action(action)
-      return false unless SUPPORTED_ACTIONS.include? action
-      case action
-      when 'hostname'
-        DynDnsR::Equal
-      when 'alias'
-        DynDnsR::A
-      else
-        DynDnsR.log.warn("Unimplemented method #{action}")
-        false
-      end
+      act = action.to_sym
+      return false unless SUPPORTED_ACTIONS.key? act
+      SUPPORTED_ACTIONS[act]
+    end
+
+    def update_dns
+      DynDnsR::Run((DynDnsR::ROOT / 'bin/tinydns-data.sh').to_s)
     end
 
     # All the action is here
@@ -60,7 +58,8 @@ module DynDnsR
           r.post do
             success = obj.create_record @auth_user.id, host, ip, ttl
             if success
-              'Success'
+              update_dns
+              { 'Success' => success.values }.to_json
             else
               r.halt 406, "Unable to create #{action} record"
             end

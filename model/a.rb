@@ -9,9 +9,10 @@ module DynDnsR
       if record
         if record.ttl != ttl.to_i
           record.ttl = ttl.to_i
-          record.save
+          record.save.write! true
+        else
+          return record.write!
         end
-        return record.write!
       end
       new(host: host, ip: ip, ttl: ttl, user_id: user_id).write!
     end

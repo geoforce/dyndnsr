@@ -29,7 +29,7 @@ module DynDnsR
     end
 
     def record
-      format('=%s:%s:%s', @host, @ip, @ttl)
+      format('=%s:%s:%s', host, ip, ttl)
     end
 
     def write!(force = false)
