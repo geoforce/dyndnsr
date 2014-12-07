@@ -26,11 +26,14 @@ module DynDnsR
 
     # All the action is here
     route do |r|
+      # /
       r.root do
         r.redirect '/api'
       end
 
+      # /api
       r.on 'api' do
+        # /api
         r.is do
           'Api Home, nothing of interest'
         end
@@ -42,10 +45,12 @@ module DynDnsR
         r.halt 403, 'Unable to authenticate' unless @auth_user
         r.halt 403, 'Unable to authenticate' unless ApiAuth.authentic?(request, @auth_user.secret) # rubocop:disable Metrics/LineLength
 
+        # /api/test
         r.on 'test' do
           "You are authenticated #{@auth_user.name}"
         end
 
+        # /api/host/<anything>
         r.on 'host/:host' do |host|
           r.get do
             Equal.find(host: host).values.to_json
